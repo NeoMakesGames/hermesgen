@@ -5,7 +5,6 @@ import net.fabricmc.api.ModInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-// --- 1. NEW IMPORTS ---
 import jdk.incubator.code.Op;
 import jdk.incubator.code.Reflect;
 import java.util.Optional;
@@ -24,8 +23,6 @@ public class HermesGen implements ModInitializer {
         LOGGER.info("🔍 Scanning for code models...");
 
         try {
-            // --- 2. NEW ENTRY POINT ---
-            // 'CodeReflection.reflectCode' -> 'Op.ofMethod'
             Optional<CoreOp.FuncOp> opTree = Op.ofMethod(
                     HermesGen.class.getMethod("gpuNoiseStub", double.class, double.class)
             );
@@ -44,11 +41,6 @@ public class HermesGen implements ModInitializer {
         }
     }
 
-    /**
-     * Test Subject.
-     * --- 3. NEW ANNOTATION ---
-     * '@CodeReflection' -> '@Reflect'
-     */
     @Reflect
     public static double gpuNoiseStub(double x, double z) {
         double frequency = 0.05;
