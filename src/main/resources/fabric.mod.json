@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "hermesgen",
+  "version": "${version}",
+  "name": "HermesGen",
+  "description": "GPU-Accelerated Procedural Streaming using Project Babylon.",
+  "authors": [
+    "Me"
+  ],
+  "contact": {
+    "homepage": "https://fabricmc.net/",
+    "sources": "https://github.com/FabricMC/fabric-example-mod"
+  },
+  "license": "MIT",
+  "icon": "assets/hermesgen/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.hermesmod.HermesGen"
+    ]
+  },
+  "mixins": [
+    "hermesgen.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.18.4",
+    "minecraft": "~1.21.11",
+    "java": ">=26"
+  }
+}

@@ -1,0 +1,104 @@
+plugins {
+    id 'fabric-loom' version '1.14-SNAPSHOT'
+    id 'maven-publish'
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+    archivesName = project.archives_base_name
+}
+
+repositories {
+    // Add repositories to retrieve artifacts from in here.
+    // You should only use this when depending on other mods because
+    // Loom adds the essential maven repositories to download Minecraft and libraries on its own.
+    // maven { url 'https://maven.example.com/' }
+}
+
+dependencies {
+    // To change the versions see the gradle.properties file
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+
+    // Fabric API (optional for this specific test, but good practice)
+    // modImplementation "net.fabricmc.fabric-api:fabric-api:0.100.0+1.21.1"
+}
+
+// --- PROJECT BABYLON CONFIGURATION ---
+
+// 1. Force the Toolchain to use JDK 26
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(26)
+    }
+}
+
+// 2. Unlock Incubator Modules for Compilation
+tasks.withType(JavaCompile).configureEach {
+    // 1. DO NOT use 'release'. It breaks on custom/internal JDKs.
+    // options.release = babylonVersion  <-- DELETED
+
+    // 2. Use source/target instead to use the raw JDK image
+    sourceCompatibility = "26"
+    targetCompatibility = "26"
+
+    // 3. Enable the Babylon modules
+    options.compilerArgs += [
+        '--enable-preview',
+        '--add-modules', 'jdk.incubator.code'
+    ]
+
+    // 4. Debug: Print args to console so we can confirm they are passed
+    doFirst {
+        // println "👉 COMPILING WITH: " + javaCompiler.get().metadata.installationPath
+        // println "👉 ARGS: " + options.compilerArgs
+    }
+}
+
+// 3. Unlock Incubator Modules for Runtime (Client & Server)
+loom {
+    runs {
+        // Apply to both Client and Server
+        configureEach {
+            // 1. JVM Flags (Required for the JVM to load the module)
+            vmArgs "--enable-preview", "--add-modules", "jdk.incubator.code"
+
+            // 2. Redundant Property Set (Just to be double-safe)
+            def codeModule = file("D:/Github/hermes/babylon-jdk/modules/jdk.incubator.code")
+            property "fabric.classPathGroups", codeModule.canonicalPath + File.pathSeparator + codeModule.parentFile.canonicalPath
+            property "fabric.systemLibraries", codeModule.canonicalPath
+            property "fabric.system.packages", "jdk.incubator.code.*"
+        }
+    }
+}
+
+// 4. Ensure JAR manifest contains correct entries
+jar {
+    from("LICENSE") {
+        rename { "${it}_${project.base.archivesName.get()}" }
+    }
+}
+
+// ... (rest of your file) ...
+
+// FORCE ARGUMENTS ON ALL JAVA EXECUTIONS
+tasks.withType(JavaExec).configureEach {
+    // 1. Force the JVM flags
+    jvmArgs += [
+            "--enable-preview",
+            "--add-modules", "jdk.incubator.code",
+            // This property allows Fabric to load the "restricted" classes
+            "-Dfabric.classPathGroups=" + file("D:/Github/hermes/babylon-jdk/modules/jdk.incubator.code").canonicalPath + File.pathSeparator + file("D:/Github/hermes/babylon-jdk/modules/jdk.incubator.code").parentFile.canonicalPath,
+            "-Dfabric.systemLibraries=" + file("D:/Github/hermes/babylon-jdk/modules/jdk.incubator.code").canonicalPath,
+            "-Dfabric.system.packages=jdk.incubator.code.*"
+    ]
+
+    // 2. Debug print (so we can see it in the log)
+    doFirst {
+        // println "👉 FORCING ARGS ON TASK: " + name
+        // println "👉 ARGS: " + jvmArgs
+    }
+}
