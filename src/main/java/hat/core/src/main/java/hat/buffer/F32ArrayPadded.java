@@ -1,0 +1,89 @@
+/*
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+package hat.buffer;
+
+import hat.types.Float2;
+import hat.types.Float4;
+import jdk.incubator.code.Reflect;
+import optkl.util.carriers.CommonCarrier;
+import optkl.ifacemapper.Buffer;
+import optkl.ifacemapper.MappableIface;
+import optkl.ifacemapper.Schema;
+
+import java.lang.foreign.MemorySegment;
+
+import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
+import static java.lang.foreign.ValueLayout.JAVA_INT;
+
+public interface F32ArrayPadded extends Buffer {
+    long PAD_SIZE = 12;
+    default int pad(int pad){return pad;}
+   // Ideally ? @Reflect default void  schema(){pad(12);array(length()+pad(12));}
+    //Schema<F32ArrayPadded> schema = Schema.of(F32ArrayPadded.class);
+    Schema<F32ArrayPadded> schema = Schema.of(F32ArrayPadded.class, $ -> $
+            .arrayLen("length").pad(PAD_SIZE).array("array"));
+    int length();
+    float array(long idx);
+    void array(long idx, float f);
+
+    long ARRAY_OFFSET = JAVA_INT.byteSize()+PAD_SIZE;
+
+    static F32ArrayPadded create(CommonCarrier cc, int length){
+        return schema.allocate(cc, length);
+    }
+
+    default F32ArrayPadded copyFrom(float[] floats) {
+        MemorySegment.copy(floats, 0, MappableIface.getMemorySegment(this), JAVA_FLOAT, ARRAY_OFFSET, length());
+        return this;
+    }
+
+    static F32ArrayPadded createFrom(CommonCarrier cc, float[] arr){
+        return create( cc, arr.length).copyFrom(arr);
+    }
+
+    default F32ArrayPadded copyTo(float[] floats) {
+        MemorySegment.copy(MappableIface.getMemorySegment(this), JAVA_FLOAT, ARRAY_OFFSET, floats, 0, length());
+        return this;
+    }
+
+    default Float4.MutableImpl[] float4ArrayView() {
+        return null;
+    }
+
+    default Float4.MutableImpl float4View(int index) {
+        return  null;
+    }
+
+    default void storeFloat4View(Float4 v, int index) {
+    }
+
+    default Float2.MutableImpl float2View(int index) {
+        return  null;
+    }
+
+    default void storeFloat2View(Float2 v, int index) {
+    }
+
+}

@@ -72,6 +72,14 @@ loom {
             property "fabric.systemLibraries", codeModule.canonicalPath
             property "fabric.system.packages", "jdk.incubator.code.*"
         }
+        client {
+            // Unlocks the Babylon Code Reflection API for the game client
+            vmArgs "--add-modules", "jdk.incubator.code"
+        }
+        server {
+            // Do the same for the server if you plan to run it
+            vmArgs "--add-modules", "jdk.incubator.code"
+        }
     }
 }
 
@@ -101,4 +109,14 @@ tasks.withType(JavaExec).configureEach {
         // println "👉 FORCING ARGS ON TASK: " + name
         // println "👉 ARGS: " + jvmArgs
     }
+    // Force Gradle to use the Babylon JDK for compiling
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of(24) // Or 25/26
+    }
+
+    // Enable the incubation features (Code Reflection)
+    options.compilerArgs += [
+            "--enable-preview",
+            "--add-modules", "jdk.incubator.code"
+    ]
 }

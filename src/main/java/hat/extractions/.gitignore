@@ -1,0 +1,7 @@
+build/
+cmake-build-debug/
+opencl/src
+opengl/src
+cuda/src
+src/
+

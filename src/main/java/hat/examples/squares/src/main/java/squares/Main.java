@@ -1,0 +1,73 @@
+/*
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+package squares;
+
+import hat.Accelerator;
+import hat.Accelerator.Compute;
+import hat.ComputeContext;
+import hat.NDRange;
+import hat.KernelContext;
+import hat.backend.Backend;
+import hat.buffer.S32Array;
+
+import jdk.incubator.code.Reflect;
+import optkl.ifacemapper.MappableIface;
+
+import java.lang.invoke.MethodHandles;
+
+public class Main {
+    @Reflect
+    public static int squareit(int v) {
+        return  v * v;
+
+    }
+
+    @Reflect
+    public static void squareKernel(@MappableIface.RO KernelContext kc, @MappableIface.RW S32Array s32Array) {
+        if (kc.gix < kc.gsx){
+           int value = s32Array.array(kc.gix);       // arr[cc.x]
+           s32Array.array(kc.gix, squareit(value));  // arr[cc.x]=value*value
+        }
+    }
+
+    @Reflect
+    public static void square(@MappableIface.RO ComputeContext cc, @MappableIface.RW S32Array s32Array) {
+        cc.dispatchKernel(NDRange.of1D(s32Array.length()), kc -> squareKernel(kc, s32Array));
+    }
+
+    static void main(String[] args) {
+        var accelerator = new Accelerator(MethodHandles.lookup(), Backend.FIRST);//new JavaMultiThreadedBackend());
+        var arr = S32Array.create(accelerator, 32);
+        for (int i = 0; i < arr.length(); i++) {
+            arr.array(i, i);
+        }
+        accelerator.compute((@Reflect Compute)
+                cc -> Main.square(cc, arr)
+        );
+        for (int i = 0; i < arr.length(); i++) {
+            System.out.println(i + " " + arr.array(i));
+        }
+    }
+}
